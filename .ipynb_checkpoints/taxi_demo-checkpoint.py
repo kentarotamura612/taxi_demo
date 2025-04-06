@@ -162,7 +162,7 @@ def compute_dbscan(data, min_samples):
     return db.labels_
 df['pickup_cluster'] = compute_dbscan(pickup_scaled, min_samples)
 clusters_pickup = len(set(df['pickup_cluster'])) - (1 if -1 in df['pickup_cluster'] else 0)
-st.markdown(f"乗車地点 クラスタ数: **{clusters_pickup}** (グループに入らなかった点は -1)")
+#st.markdown(f"乗車地点 クラスタ数: **{clusters_pickup}** (グループに入らなかった点は -1)")
 pickup_clusters = df[df['pickup_cluster'] != -1]
 fig_pickup = go.Figure()
 for cid in sorted(pickup_clusters['pickup_cluster'].unique()):
@@ -216,7 +216,7 @@ dropoff_coords = df[['dropoff_lat', 'dropoff_lng']].values
 dropoff_scaled = StandardScaler().fit_transform(dropoff_coords)
 df['dropoff_cluster'] = compute_dbscan(dropoff_scaled, min_samples)
 clusters_dropoff = len(set(df['dropoff_cluster'])) - (1 if -1 in df['dropoff_cluster'] else 0)
-st.markdown(f"降車地点 クラスタ数: **{clusters_dropoff}** (グループに入らなかった点は -1)")
+#st.markdown(f"降車地点 クラスタ数: **{clusters_dropoff}** (グループに入らなかった点は -1)")
 dropoff_clusters = df[df['dropoff_cluster'] != -1]
 fig_dropoff = go.Figure()
 for cid in sorted(dropoff_clusters['dropoff_cluster'].unique()):
