@@ -7,37 +7,106 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 
 # ------------------------------
+# テキスト辞書（日本語と英語）
+# ------------------------------
+T = {
+    "page_title": {"ja": "モビリティデータ分析デモ", "en": "Mobility Data Analysis Demo"},
+    "sidebar_title": {"ja": "株式会社 Data Hiker", "en": "Data Hiker Inc."},
+    "official_site": {"ja": "[公式サイトはこちら](https://www.data-hiker.com)", "en": "[Official Website](https://www.data-hiker.com)"},
+    "consultation": {"ja": "### 分析のご相談", "en": "### Analysis Consultation"},
+    "email": {"ja": "**Email:** datahiker.info@gmail.com", "en": "**Email:** datahiker.info@gmail.com"},
+    "settings": {"ja": "### 設定", "en": "### Settings"},
+    "dbscan_slider_label": {"ja": "DBSCAN min_samples", "en": "DBSCAN min_samples"},
+    "dbscan_slider_help": {"ja": "各点の近くにどれくらい点があるかの目安です", "en": "Indicative number of points near each sample point"},
+    "intro_paragraph": {
+        "ja": """このデモは、ニューヨークのタクシー（黄色タクシーおよび緑色タクシー）の乗車記録データを用いた分析デモです。  
+データは、[ニューヨークタクシー＆リムジン委員会（TLC）のウェブサイト](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page)からダウンロードされています。
+""",
+        "en": """This demo is an analysis demonstration using trip record data of New York taxis (yellow and green taxis).  
+The data was downloaded from the [New York Taxi & Limousine Commission (TLC) website](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page).
+"""
+    },
+    "section1_title": {"ja": "1. 乗車・降車地点マップ", "en": "1. Pickup and Dropoff Map"},
+    "section1_insight": {
+        "ja": "【インサイト】この地図を確認することで、ニューヨークでタクシーに乗る場所と降りる場所の全体的な分布が一目で分かります。",
+        "en": "Insight: This map provides an overview of the distribution of taxi pickup and dropoff locations in New York."
+    },
+    "combined_map_title": {
+        "ja": "乗車・降車地点の分布",
+        "en": "Distribution of Pickup and Dropoff Locations"
+    },
+    "section2_title": {"ja": "2. 時間帯別アニメーション", "en": "2. Time-based Animation"},
+    "section2_insight": {
+        "ja": "【インサイト】このアニメーションでは、時間の経過に伴うタクシーの乗降地点の変化を確認できます。",
+        "en": "Insight: This animation shows how taxi pickup and dropoff locations change over time."
+    },
+    "section3_title": {"ja": "3. DBSCANクラスタリング（乗車地点）", "en": "3. DBSCAN Clustering (Pickup Locations)"},
+    "section3_insight": {
+        "ja": "【インサイト】クラスタリングにより、類似した乗車地点がグループ化され、主要な乗車エリアが視覚的に把握できます。",
+        "en": "Insight: Clustering groups similar pickup locations, visually highlighting major pickup areas."
+    },
+    "section3_stats_title": {"ja": "#### 乗車地点クラスタ別 距離統計", "en": "#### Pickup Location Cluster Distance Statistics"},
+    "pickup_clustering_title": {"ja": "乗車地点のクラスタリング", "en": "Pickup Location Clustering"},
+    "pickup_bubble_title": {"ja": "乗車地点のクラスタごとの移動距離の特徴", "en": "Travel Distance Characteristics by Pickup Cluster"},
+    "section3_bubble_insight": {
+        "ja": "【インサイト】バブルチャートでは、横軸が平均距離、縦軸が中央値距離を示し、バブルの大きさは件数、色は距離のばらつきを表しています。",
+        "en": "Insight: In the bubble chart, the horizontal axis represents the average distance, the vertical axis the median distance, bubble size indicates count, and color shows distance variability."
+    },
+    "section4_title": {"ja": "4. DBSCANクラスタリング（降車地点）", "en": "4. DBSCAN Clustering (Dropoff Locations)"},
+    "section4_insight": {
+        "ja": "【インサイト】降車地点のクラスタリングにより、タクシーの降車が多い主要エリアが把握できます。",
+        "en": "Insight: Clustering dropoff locations highlights major areas where taxis are dropped off."
+    },
+    "section4_stats_title": {"ja": "#### 降車地点クラスタ別 距離統計", "en": "#### Dropoff Location Cluster Distance Statistics"},
+    "dropoff_clustering_title": {"ja": "降車地点のクラスタリング", "en": "Dropoff Location Clustering"},
+    "dropoff_bubble_title": {"ja": "降車地点のクラスタごとの移動距離の特徴", "en": "Travel Distance Characteristics by Dropoff Cluster"},
+    "section4_bubble_insight": {
+        "ja": "【インサイト】バブルチャートでは、横軸が平均距離、縦軸が中央値距離を示し、バブルの大きさは件数、色は距離のばらつきを表しています。",
+        "en": "Insight: In the bubble chart, the horizontal axis represents the average distance, the vertical axis the median distance, bubble size indicates count, and color shows distance variability."
+    },
+    "section5_title": {"ja": "5. ピックアップから降車への移動フロー（Sankey Diagram）", "en": "5. Flow from Pickup to Dropoff (Sankey Diagram)"},
+    "section5_insight": {
+        "ja": "【インサイト】このフロー図は、どの乗車クラスタからどの降車クラスタへタクシーが移動しているかを直感的に示します。",
+        "en": "Insight: This flow diagram intuitively shows which pickup clusters lead to which dropoff clusters."
+    },
+    "sankey_title": {"ja": "乗車クラスタから降車クラスタへの移動フロー", "en": "Flow from Pickup to Dropoff Clusters"},
+    "pickup_cluster_prefix": {"ja": "乗車クラスタ ", "en": "Pickup Cluster "},
+    "dropoff_cluster_prefix": {"ja": "降車クラスタ ", "en": "Dropoff Cluster "}
+}
+
+# ------------------------------
 # UI設定
 # ------------------------------
 st.set_page_config(
-    page_title="モビリティデータ分析デモ", 
+    page_title="モビリティデータ分析デモ / Mobility Data Analysis Demo", 
     layout="wide", 
     page_icon="🚕",
     initial_sidebar_state="expanded"
 )
 
 with st.sidebar:
-    st.markdown("### 株式会社 Data Hiker")
-    st.markdown("[公式サイトはこちら](https://www.data-hiker.com)")
+    # 言語選択
+    lang = st.radio("言語 / Language", options=["日本語", "English"])
+    lang_code = "ja" if lang == "日本語" else "en"
+    
+    st.markdown("### " + T["sidebar_title"][lang_code])
+    st.markdown(T["official_site"][lang_code])
     st.markdown("---")
-    st.markdown("### 分析のご相談")
-    st.markdown("**Email:** datahiker.info@gmail.com")
+    st.markdown(T["consultation"][lang_code])
+    st.markdown(T["email"][lang_code])
     st.markdown("---")
-    st.markdown("### 設定")
+    st.markdown(T["settings"][lang_code])
     min_samples = st.slider(
-        "DBSCAN min_samples", 
-        min_value=5, 
-        max_value=100, 
-        value=30, 
-        step=5, 
-        help="各点の近くにどれくらい点があるかの目安です"
+        T["dbscan_slider_label"][lang_code],
+        min_value=5,
+        max_value=100,
+        value=30,
+        step=5,
+        help=T["dbscan_slider_help"][lang_code]
     )
 
-st.title("モビリティデータ分析デモ")
-st.markdown("""
-このデモは、ニューヨークのタクシー（黄色タクシーおよび緑色タクシー）の乗車記録データを用いた分析デモです。  
-データは、[ニューヨークタクシー＆リムジン委員会（TLC）のウェブサイト](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page)からダウンロードされています。
-""")
+st.title(T["page_title"][lang_code])
+st.markdown(T["intro_paragraph"][lang_code])
 
 # ------------------------------
 # データ読み込みと前処理
@@ -89,8 +158,8 @@ df['trip_distance_km'] = haversine(df['pickup_lat'], df['pickup_lng'],
 # ------------------------------
 # 1. 乗車・降車地点マップ
 # ------------------------------
-st.markdown("### 1. 乗車・降車地点マップ")
-st.markdown("【インサイト】この地図を確認することで、ニューヨークでタクシーに乗る場所と降りる場所の全体的な分布が一目で分かります。")
+st.markdown(T["section1_title"][lang_code])
+st.markdown(T["section1_insight"][lang_code])
 def render_combined_map(df):
     pickup = df[['pickup_lat', 'pickup_lng']].rename(columns={'pickup_lat': 'lat', 'pickup_lng': 'lng'})
     dropoff = df[['dropoff_lat', 'dropoff_lng']].rename(columns={'dropoff_lat': 'lat', 'dropoff_lng': 'lng'})
@@ -101,13 +170,13 @@ def render_combined_map(df):
         lat=pickup['lat'], lon=pickup['lng'],
         mode='markers',
         marker=go.scattermapbox.Marker(size=6, color='blue', opacity=0.4),
-        name='乗車'
+        name='Pickup'
     ))
     fig.add_trace(go.Scattermapbox(
         lat=dropoff['lat'], lon=dropoff['lng'],
         mode='markers',
         marker=go.scattermapbox.Marker(size=6, color='orange', opacity=0.4),
-        name='降車'
+        name='Dropoff'
     ))
     fig.update_layout(
         mapbox=dict(
@@ -116,7 +185,7 @@ def render_combined_map(df):
             zoom=11
         ),
         margin={"r":0, "t":40, "l":0, "b":0},
-        title="乗車・降車地点の分布"
+        title=T["combined_map_title"][lang_code]
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -125,13 +194,13 @@ render_combined_map(df)
 # ------------------------------
 # 2. 時間帯別アニメーション
 # ------------------------------
-st.markdown("### 2. 時間帯別アニメーション")
-st.markdown("【インサイト】このアニメーションでは、時間の経過に伴うタクシーの乗降地点の変化を確認できます。")
+st.markdown(T["section2_title"][lang_code])
+st.markdown(T["section2_insight"][lang_code])
 df_pick = df[['pickup_lat', 'pickup_lng', 'hour']].copy()
-df_pick['type'] = '乗車'
+df_pick['type'] = 'Pickup'
 df_pick = df_pick.rename(columns={'pickup_lat': 'lat', 'pickup_lng': 'lng'})
 df_drop = df[['dropoff_lat', 'dropoff_lng', 'hour']].copy()
-df_drop['type'] = '降車'
+df_drop['type'] = 'Dropoff'
 df_drop = df_drop.rename(columns={'dropoff_lat': 'lat', 'dropoff_lng': 'lng'})
 full_anim = pd.concat([df_pick, df_drop])
 fig_anim = px.scatter_mapbox(
@@ -144,15 +213,15 @@ fig_anim = px.scatter_mapbox(
     zoom=10, height=700,
     mapbox_style="carto-darkmatter",
     opacity=0.5,
-    color_discrete_map={"乗車": "blue", "降車": "orange"}
+    color_discrete_map={"Pickup": "blue", "Dropoff": "orange"}
 )
 st.plotly_chart(fig_anim, use_container_width=True)
 
 # ------------------------------
 # 3. DBSCANクラスタリング（乗車地点）とクラスタ別統計・バブルチャート
 # ------------------------------
-st.markdown("### 3. DBSCANクラスタリング（乗車地点）")
-st.markdown("【インサイト】クラスタリングにより、類似した乗車地点がグループ化され、主要な乗車エリアが視覚的に把握できます。")
+st.markdown(T["section3_title"][lang_code])
+st.markdown(T["section3_insight"][lang_code])
 pickup_coords = df[['pickup_lat', 'pickup_lng']].values
 pickup_scaled = StandardScaler().fit_transform(pickup_coords)
 @st.cache_data(show_spinner=True)
@@ -161,8 +230,6 @@ def compute_dbscan(data, min_samples):
     db = DBSCAN(eps=eps_fixed, min_samples=min_samples).fit(data)
     return db.labels_
 df['pickup_cluster'] = compute_dbscan(pickup_scaled, min_samples)
-clusters_pickup = len(set(df['pickup_cluster'])) - (1 if -1 in df['pickup_cluster'] else 0)
-#st.markdown(f"乗車地点 クラスタ数: **{clusters_pickup}** (グループに入らなかった点は -1)")
 pickup_clusters = df[df['pickup_cluster'] != -1]
 fig_pickup = go.Figure()
 for cid in sorted(pickup_clusters['pickup_cluster'].unique()):
@@ -181,13 +248,13 @@ fig_pickup.update_layout(
         zoom=10
     ),
     margin={"r":0, "t":40, "l":0, "b":0},
-    title="乗車地点のクラスタリング"
+    title=T["pickup_clustering_title"][lang_code]
 )
 st.plotly_chart(fig_pickup, use_container_width=True)
 pickup_cluster_stats = df[df['pickup_cluster'] != -1].groupby("pickup_cluster")["trip_distance_km"].agg(
     平均="mean", 中央値="median", 標準偏差="std", 件数="count"
 ).reset_index()
-st.markdown("#### 乗車地点クラスタ別 距離統計")
+st.markdown(T["section3_stats_title"][lang_code])
 st.dataframe(pickup_cluster_stats)
 fig_bubble_pickup = px.scatter(
     pickup_cluster_stats,
@@ -195,28 +262,26 @@ fig_bubble_pickup = px.scatter(
     size="件数",
     color="標準偏差",
     hover_name="pickup_cluster",
-    title="乗車地点のクラスタごとの移動距離の特徴",
+    title=T["pickup_bubble_title"][lang_code],
     labels={
-        "平均": "平均距離 (km)",
-        "中央値": "中央値距離 (km)",
-        "標準偏差": "距離のばらつき",
-        "件数": "件数",
-        "pickup_cluster": "クラスタ"
+        "平均": "平均距離 (km)" if lang_code=="ja" else "Average Distance (km)",
+        "中央値": "中央値距離 (km)" if lang_code=="ja" else "Median Distance (km)",
+        "標準偏差": "距離のばらつき" if lang_code=="ja" else "Distance Variability",
+        "件数": "件数" if lang_code=="ja" else "Count",
+        "pickup_cluster": "クラスタ" if lang_code=="ja" else "Cluster"
     }
 )
 st.plotly_chart(fig_bubble_pickup, use_container_width=True)
-st.markdown("【インサイト】この結果から、乗車地点の各クラスタの規模や移動距離のばらつきを比較できます。")
+st.markdown(T["section3_bubble_insight"][lang_code])
 
 # ------------------------------
 # 4. DBSCANクラスタリング（降車地点）とクラスタ別統計・バブルチャート
 # ------------------------------
-st.markdown("### 4. DBSCANクラスタリング（降車地点）")
-st.markdown("【インサイト】降車地点のクラスタリングにより、タクシーの降車が多い主要エリアが把握できます。")
+st.markdown(T["section4_title"][lang_code])
+st.markdown(T["section4_insight"][lang_code])
 dropoff_coords = df[['dropoff_lat', 'dropoff_lng']].values
 dropoff_scaled = StandardScaler().fit_transform(dropoff_coords)
 df['dropoff_cluster'] = compute_dbscan(dropoff_scaled, min_samples)
-clusters_dropoff = len(set(df['dropoff_cluster'])) - (1 if -1 in df['dropoff_cluster'] else 0)
-#st.markdown(f"降車地点 クラスタ数: **{clusters_dropoff}** (グループに入らなかった点は -1)")
 dropoff_clusters = df[df['dropoff_cluster'] != -1]
 fig_dropoff = go.Figure()
 for cid in sorted(dropoff_clusters['dropoff_cluster'].unique()):
@@ -235,13 +300,13 @@ fig_dropoff.update_layout(
         zoom=10
     ),
     margin={"r":0, "t":40, "l":0, "b":0},
-    title="降車地点のクラスタリング"
+    title=T["dropoff_clustering_title"][lang_code]
 )
 st.plotly_chart(fig_dropoff, use_container_width=True)
 dropoff_cluster_stats = df[df['dropoff_cluster'] != -1].groupby("dropoff_cluster")["trip_distance_km"].agg(
     平均="mean", 中央値="median", 標準偏差="std", 件数="count"
 ).reset_index()
-st.markdown("#### 降車地点クラスタ別 距離統計")
+st.markdown(T["section4_stats_title"][lang_code])
 st.dataframe(dropoff_cluster_stats)
 fig_bubble_dropoff = px.scatter(
     dropoff_cluster_stats,
@@ -249,35 +314,34 @@ fig_bubble_dropoff = px.scatter(
     size="件数",
     color="標準偏差",
     hover_name="dropoff_cluster",
-    title="降車地点のクラスタごとの移動距離の特徴",
+    title=T["dropoff_bubble_title"][lang_code],
     labels={
-        "平均": "平均距離 (km)",
-        "中央値": "中央値距離 (km)",
-        "標準偏差": "距離のばらつき",
-        "件数": "件数",
-        "dropoff_cluster": "クラスタ"
+        "平均": "平均距離 (km)" if lang_code=="ja" else "Average Distance (km)",
+        "中央値": "中央値距離 (km)" if lang_code=="ja" else "Median Distance (km)",
+        "標準偏差": "距離のばらつき" if lang_code=="ja" else "Distance Variability",
+        "件数": "件数" if lang_code=="ja" else "Count",
+        "dropoff_cluster": "クラスタ" if lang_code=="ja" else "Cluster"
     }
 )
 st.plotly_chart(fig_bubble_dropoff, use_container_width=True)
-st.markdown("【インサイト】この図から、降車地点の各クラスタの利用規模と移動距離の特徴を比較できます。")
+st.markdown(T["section4_bubble_insight"][lang_code])
 
 # ------------------------------
 # 5. ピックアップから降車への移動フロー（Sankey Diagram）
 # ------------------------------
-st.markdown("### 5. ピックアップから降車への移動フロー（Sankey Diagram）")
-st.markdown("【インサイト】このフロー図は、どの乗車クラスタからどの降車クラスタへタクシーが移動しているかを直感的に示します。")
-
+st.markdown(T["section5_title"][lang_code])
+st.markdown(T["section5_insight"][lang_code])
 df_flow = df[(df['pickup_cluster'] != -1) & (df['dropoff_cluster'] != -1)]
 flow_data = df_flow.groupby(['pickup_cluster', 'dropoff_cluster']).size().reset_index(name='count')
 
 # クラスタの名前は、クラスタリング時の結果をもとに設定
-pickup_labels = ["Pickup Cluster " + str(x) for x in sorted(df_flow['pickup_cluster'].unique())]
-dropoff_labels = ["Dropoff Cluster " + str(x) for x in sorted(df_flow['dropoff_cluster'].unique())]
+pickup_labels = [T["pickup_cluster_prefix"][lang_code] + str(x) for x in sorted(df_flow['pickup_cluster'].unique())]
+dropoff_labels = [T["dropoff_cluster_prefix"][lang_code] + str(x) for x in sorted(df_flow['dropoff_cluster'].unique())]
 labels = pickup_labels + dropoff_labels
 
 # ピックアップノードはpickup_labelsの順、降車ノードはdropoff_labelsの順にインデックスを割り当てる
-source = flow_data['pickup_cluster'].apply(lambda x: pickup_labels.index("Pickup Cluster " + str(x))).tolist()
-target = flow_data['dropoff_cluster'].apply(lambda x: dropoff_labels.index("Dropoff Cluster " + str(x)) + len(pickup_labels)).tolist()
+source = flow_data['pickup_cluster'].apply(lambda x: pickup_labels.index(T["pickup_cluster_prefix"][lang_code] + str(x))).tolist()
+target = flow_data['dropoff_cluster'].apply(lambda x: dropoff_labels.index(T["dropoff_cluster_prefix"][lang_code] + str(x)) + len(pickup_labels)).tolist()
 values = flow_data['count'].tolist()
 
 sankey_data = dict(
@@ -295,5 +359,5 @@ sankey_data = dict(
     )
 )
 fig_sankey = go.Figure(data=[sankey_data])
-fig_sankey.update_layout(title_text="乗車クラスタから降車クラスタへの移動フロー", font_size=10)
+fig_sankey.update_layout(title_text=T["sankey_title"][lang_code], font_size=10)
 st.plotly_chart(fig_sankey, use_container_width=True)
