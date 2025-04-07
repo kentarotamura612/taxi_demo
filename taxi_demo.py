@@ -218,7 +218,7 @@ fig_anim = px.scatter_mapbox(
 st.plotly_chart(fig_anim, use_container_width=True)
 
 # ------------------------------
-# 3. DBSCANクラスタリング（乗車地点）とクラスタ別統計・バブルチャート
+# 3. DBSCANクラスタリング（乗車地点）と統計・バブルチャート
 # ------------------------------
 st.markdown(T["section3_title"][lang_code])
 st.markdown(T["section3_insight"][lang_code])
@@ -231,6 +231,7 @@ def compute_dbscan(data, min_samples):
     return db.labels_
 df['pickup_cluster'] = compute_dbscan(pickup_scaled, min_samples)
 pickup_clusters = df[df['pickup_cluster'] != -1]
+
 fig_pickup = go.Figure()
 for cid in sorted(pickup_clusters['pickup_cluster'].unique()):
     cdata = pickup_clusters[pickup_clusters['pickup_cluster'] == cid]
@@ -251,31 +252,49 @@ fig_pickup.update_layout(
     title=T["pickup_clustering_title"][lang_code]
 )
 st.plotly_chart(fig_pickup, use_container_width=True)
+
+# 集計は内部的には英語表記のカラム名で行い、その後表示用にリネーム
 pickup_cluster_stats = df[df['pickup_cluster'] != -1].groupby("pickup_cluster")["trip_distance_km"].agg(
-    平均="mean", 中央値="median", 標準偏差="std", 件数="count"
+    mean="mean", median="median", std="std", count="count"
 ).reset_index()
+if lang_code == "ja":
+    pickup_cluster_stats.rename(columns={"pickup_cluster": "クラスタ", "mean": "平均", "median": "中央値", "std": "標準偏差", "count": "件数"}, inplace=True)
+    hover_col_pickup = "クラスタ"
+    labels_pickup = {
+        "平均": "平均距離 (km)",
+        "中央値": "中央値距離 (km)",
+        "標準偏差": "距離のばらつき",
+        "件数": "件数",
+        "クラスタ": "クラスタ"
+    }
+else:
+    pickup_cluster_stats.rename(columns={"pickup_cluster": "Cluster", "mean": "Average", "median": "Median", "std": "Std Dev", "count": "Count"}, inplace=True)
+    hover_col_pickup = "Cluster"
+    labels_pickup = {
+        "Average": "Average Distance (km)",
+        "Median": "Median Distance (km)",
+        "Std Dev": "Distance Variability",
+        "Count": "Count",
+        "Cluster": "Cluster"
+    }
 st.markdown(T["section3_stats_title"][lang_code])
-st.dataframe(pickup_cluster_stats)
+st.dataframe(pickup_cluster_stats.style.set_properties(**{'font-size': '14px'}))
+
 fig_bubble_pickup = px.scatter(
     pickup_cluster_stats,
-    x="平均", y="中央値",
-    size="件数",
-    color="標準偏差",
-    hover_name="pickup_cluster",
+    x=("平均" if lang_code=="ja" else "Average"), 
+    y=("中央値" if lang_code=="ja" else "Median"),
+    size=("件数" if lang_code=="ja" else "Count"),
+    color=("標準偏差" if lang_code=="ja" else "Std Dev"),
+    hover_name=hover_col_pickup,
     title=T["pickup_bubble_title"][lang_code],
-    labels={
-        "平均": "平均距離 (km)" if lang_code=="ja" else "Average Distance (km)",
-        "中央値": "中央値距離 (km)" if lang_code=="ja" else "Median Distance (km)",
-        "標準偏差": "距離のばらつき" if lang_code=="ja" else "Distance Variability",
-        "件数": "件数" if lang_code=="ja" else "Count",
-        "pickup_cluster": "クラスタ" if lang_code=="ja" else "Cluster"
-    }
+    labels=labels_pickup
 )
 st.plotly_chart(fig_bubble_pickup, use_container_width=True)
 st.markdown(T["section3_bubble_insight"][lang_code])
 
 # ------------------------------
-# 4. DBSCANクラスタリング（降車地点）とクラスタ別統計・バブルチャート
+# 4. DBSCANクラスタリング（降車地点）と統計・バブルチャート
 # ------------------------------
 st.markdown(T["section4_title"][lang_code])
 st.markdown(T["section4_insight"][lang_code])
@@ -283,6 +302,7 @@ dropoff_coords = df[['dropoff_lat', 'dropoff_lng']].values
 dropoff_scaled = StandardScaler().fit_transform(dropoff_coords)
 df['dropoff_cluster'] = compute_dbscan(dropoff_scaled, min_samples)
 dropoff_clusters = df[df['dropoff_cluster'] != -1]
+
 fig_dropoff = go.Figure()
 for cid in sorted(dropoff_clusters['dropoff_cluster'].unique()):
     cdata = dropoff_clusters[dropoff_clusters['dropoff_cluster'] == cid]
@@ -303,25 +323,42 @@ fig_dropoff.update_layout(
     title=T["dropoff_clustering_title"][lang_code]
 )
 st.plotly_chart(fig_dropoff, use_container_width=True)
+
 dropoff_cluster_stats = df[df['dropoff_cluster'] != -1].groupby("dropoff_cluster")["trip_distance_km"].agg(
-    平均="mean", 中央値="median", 標準偏差="std", 件数="count"
+    mean="mean", median="median", std="std", count="count"
 ).reset_index()
+if lang_code == "ja":
+    dropoff_cluster_stats.rename(columns={"dropoff_cluster": "クラスタ", "mean": "平均", "median": "中央値", "std": "標準偏差", "count": "件数"}, inplace=True)
+    hover_col_dropoff = "クラスタ"
+    labels_dropoff = {
+        "平均": "平均距離 (km)",
+        "中央値": "中央値距離 (km)",
+        "標準偏差": "距離のばらつき",
+        "件数": "件数",
+        "クラスタ": "クラスタ"
+    }
+else:
+    dropoff_cluster_stats.rename(columns={"dropoff_cluster": "Cluster", "mean": "Average", "median": "Median", "std": "Std Dev", "count": "Count"}, inplace=True)
+    hover_col_dropoff = "Cluster"
+    labels_dropoff = {
+        "Average": "Average Distance (km)",
+        "Median": "Median Distance (km)",
+        "Std Dev": "Distance Variability",
+        "Count": "Count",
+        "Cluster": "Cluster"
+    }
 st.markdown(T["section4_stats_title"][lang_code])
-st.dataframe(dropoff_cluster_stats)
+st.dataframe(dropoff_cluster_stats.style.set_properties(**{'font-size': '14px'}))
+
 fig_bubble_dropoff = px.scatter(
     dropoff_cluster_stats,
-    x="平均", y="中央値",
-    size="件数",
-    color="標準偏差",
-    hover_name="dropoff_cluster",
+    x=("平均" if lang_code=="ja" else "Average"), 
+    y=("中央値" if lang_code=="ja" else "Median"),
+    size=("件数" if lang_code=="ja" else "Count"),
+    color=("標準偏差" if lang_code=="ja" else "Std Dev"),
+    hover_name=hover_col_dropoff,
     title=T["dropoff_bubble_title"][lang_code],
-    labels={
-        "平均": "平均距離 (km)" if lang_code=="ja" else "Average Distance (km)",
-        "中央値": "中央値距離 (km)" if lang_code=="ja" else "Median Distance (km)",
-        "標準偏差": "距離のばらつき" if lang_code=="ja" else "Distance Variability",
-        "件数": "件数" if lang_code=="ja" else "Count",
-        "dropoff_cluster": "クラスタ" if lang_code=="ja" else "Cluster"
-    }
+    labels=labels_dropoff
 )
 st.plotly_chart(fig_bubble_dropoff, use_container_width=True)
 st.markdown(T["section4_bubble_insight"][lang_code])
@@ -334,12 +371,11 @@ st.markdown(T["section5_insight"][lang_code])
 df_flow = df[(df['pickup_cluster'] != -1) & (df['dropoff_cluster'] != -1)]
 flow_data = df_flow.groupby(['pickup_cluster', 'dropoff_cluster']).size().reset_index(name='count')
 
-# クラスタの名前は、クラスタリング時の結果をもとに設定
+# ノードラベルは各言語に合わせて設定
 pickup_labels = [T["pickup_cluster_prefix"][lang_code] + str(x) for x in sorted(df_flow['pickup_cluster'].unique())]
 dropoff_labels = [T["dropoff_cluster_prefix"][lang_code] + str(x) for x in sorted(df_flow['dropoff_cluster'].unique())]
 labels = pickup_labels + dropoff_labels
 
-# ピックアップノードはpickup_labelsの順、降車ノードはdropoff_labelsの順にインデックスを割り当てる
 source = flow_data['pickup_cluster'].apply(lambda x: pickup_labels.index(T["pickup_cluster_prefix"][lang_code] + str(x))).tolist()
 target = flow_data['dropoff_cluster'].apply(lambda x: dropoff_labels.index(T["dropoff_cluster_prefix"][lang_code] + str(x)) + len(pickup_labels)).tolist()
 values = flow_data['count'].tolist()
